@@ -344,143 +344,8 @@ try {
   console.log('Migration note:', err.message);
 }
 
-// â”€â”€â”€ Seed profiles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const profileCount = db.prepare('SELECT COUNT(*) as c FROM profiles').get().c;
-if (profileCount === 0) {
-  const insertProfile = db.prepare(`
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    case_type TEXT NOT NULL CHECK(case_type IN ('complaint','fir')),
-    status TEXT DEFAULT 'open',
-    offense_section TEXT,
-    station_id TEXT,
-    io_id TEXT,
-    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    description TEXT,
-    FOREIGN KEY (io_id) REFERENCES profiles(id)
-  );
 
-  CREATE TABLE IF NOT EXISTS case_events (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    event_time DATETIME NOT NULL,
-    category TEXT NOT NULL,
-    description TEXT NOT NULL,
-    officer_id TEXT,
-    location TEXT,
-    FOREIGN KEY (case_id) REFERENCES cases(id),
-    FOREIGN KEY (officer_id) REFERENCES profiles(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS case_persons (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('accused','victim','witness')),
-    phone TEXT,
-    address TEXT,
-    age INTEGER,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS case_documents (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
-    case_id TEXT NOT NULL,
-    doc_type TEXT NOT NULL,
-    content_text TEXT,
-    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS cdr_records (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    caller TEXT NOT NULL,
-    receiver TEXT NOT NULL,
-    duration_sec INTEGER,
-    call_time DATETIME NOT NULL,
-    tower_id TEXT,
-    tower_location TEXT,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS case_wiki_pages (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
-    case_id TEXT NOT NULL,
-    page_slug TEXT NOT NULL,
-    content_md TEXT NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(case_id, page_slug),
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-`);
-
-// â”€â”€â”€ New AI Analysis Tables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-db.exec(`
-  CREATE TABLE IF NOT EXISTS bank_transactions (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    date TEXT,
-    description TEXT,
-    debit REAL,
-    credit REAL,
-    balance REAL,
-    ref_no TEXT,
-    account_no TEXT,
-    is_suspicious INTEGER DEFAULT 0,
-    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS ip_records (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    ip_address TEXT NOT NULL,
-    port INTEGER,
-    protocol TEXT,
-    timestamp DATETIME,
-    duration_sec INTEGER,
-    data_bytes INTEGER,
-    location TEXT,
-    isp TEXT,
-    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS case_leads (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    priority TEXT DEFAULT 'medium',
-    confidence REAL DEFAULT 0.7,
-    category TEXT DEFAULT 'other',
-    sources TEXT,
-    action TEXT,
-    legal_basis TEXT,
-    status TEXT DEFAULT 'active',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS case_contradictions (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    severity TEXT DEFAULT 'moderate',
-    category TEXT DEFAULT 'other',
-    description TEXT,
-    document_a TEXT,
-    document_b TEXT,
-    significance TEXT,
-    recommended_action TEXT,
-    status TEXT DEFAULT 'open',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-  );
-`);
-
-// â”€â”€â”€ Seed profiles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Seed profiles
 const profileCount = db.prepare('SELECT COUNT(*) as c FROM profiles').get().c;
 if (profileCount === 0) {
   const insertProfile = db.prepare(`
@@ -493,7 +358,7 @@ if (profileCount === 0) {
     { id: 'usr-3', username: 'sho_1', password: 'sho123', role: 'sho', full_name: 'SHO Kumar', badge_number: 'SHO-201', rank: 'Inspector', station_id: 'stn-1' },
   ];
   db.transaction((rows) => rows.forEach(r => insertProfile.run(r)))(seedProfiles);
-  console.log('✅ Seed profiles created.');
+  console.log('Seed profiles created.');
 }
 
 // â”€â”€â”€ Seed analysis data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
