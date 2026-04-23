@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -1256,6 +1256,10 @@ app.get('/api/firs', authenticateToken, (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+const generateFIRNumber = (year) => {
+  return String(Math.floor(Math.random() * 9000) + 1000).padStart(4, '0');
+};
 
 // POST /api/firs - Register new FIR
 app.post('/api/firs', authenticateToken, (req, res) => {
