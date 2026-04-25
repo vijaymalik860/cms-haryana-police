@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import FIRListPage from './pages/FIR/FIRListPage';
 import FIRForm from './pages/FIR/FIRForm';
 import FIRDetail from './pages/FIR/FIRDetail';
+import UserManagement from './pages/Admin/UserManagement';
 
 // Module Placeholders
 const Placeholder = ({ title }) => (
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/search" element={<Placeholder title="M6: Smart Search" />} />
               <Route path="/crime-map" element={<Placeholder title="M7: Preventive Policing" />} />
               <Route path="/gd" element={<Placeholder title="M8: Smart GD" />} />
+              <Route path="/admin/users" element={<UserManagement />} />
               <Route path="*" element={<Placeholder title="Page Not Found" />} />
             </Route>
           </Route>

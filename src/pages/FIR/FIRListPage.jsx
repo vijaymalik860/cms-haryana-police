@@ -9,13 +9,11 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { RoleGate } from '../../components/Auth/RoleGate';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const STATUS_CONFIG = {
-  registered:          { color: 'blue',   label: 'Registered',           icon: <FileTextOutlined /> },
   under_investigation: { color: 'orange', label: 'Under Investigation',   icon: <ClockCircleOutlined /> },
   chargesheeted:       { color: 'purple', label: 'Chargesheeted',         icon: <FileDoneOutlined /> },
   closed:              { color: 'green',  label: 'Closed',                icon: <CheckCircleOutlined /> },
@@ -26,8 +24,10 @@ export default function FIRListPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const { token } = useAuth();
+  const { token, profile } = useAuth();
   const navigate = useNavigate();
+  const isSHO = profile?.role === 'sho' || profile?.role === 'admin';
+  const isIO  = profile?.role === 'io';
 
   const fetchFIRs = async () => {
     setLoading(true);
@@ -59,8 +59,8 @@ export default function FIRListPage() {
 
   const counts = {
     total:         firs.length,
-    registered:    firs.filter(f => f.status === 'registered').length,
     investigating: firs.filter(f => f.status === 'under_investigation').length,
+    chargesheeted: firs.filter(f => f.status === 'chargesheeted').length,
     closed:        firs.filter(f => f.status === 'closed').length,
   };
 
@@ -131,7 +131,7 @@ export default function FIRListPage() {
       key: 'status',
       width: 160,
       render: (status) => {
-        const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.registered;
+        const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.under_investigation;
         return <Tag color={cfg.color} icon={cfg.icon}>{cfg.label}</Tag>;
       },
     },
@@ -172,7 +172,7 @@ export default function FIRListPage() {
           <Title level={3} style={{ margin: 0, color: '#e6f7ff' }}>FIR Management</Title>
           <Text type="secondary">First Information Reports — प्रथम सूचना रिपोर्ट</Text>
         </div>
-        <RoleGate allowedRoles={['io', 'sho', 'admin']}>
+        {isSHO && (
           <Button
             type="primary"
             size="large"
@@ -182,18 +182,40 @@ export default function FIRListPage() {
           >
             Register New FIR
           </Button>
-        </RoleGate>
+        )}
       </div>
+
+      {/* IO Info Banner */}
+      {isIO && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(24,144,255,0.12), rgba(24,144,255,0.05))',
+          border: '1px solid rgba(24,144,255,0.3)',
+          borderRadius: 10,
+          padding: '12px 18px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          fontSize: 13,
+          color: '#69c0ff',
+        }}>
+          <FileTextOutlined style={{ fontSize: 18 }} />
+          <span>
+            <strong>IO View:</strong> आपको केवल वे FIR दिखाई जा रही हैं जो SHO द्वारा आपको assign की गई हैं।
+            {firs.length === 0 && !loading && ' अभी कोई FIR assign नहीं हुई है।'}
+          </span>
+        </div>
+      )}
 
       {/* Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         {[
           { title: 'Total FIRs', value: counts.total, color: '#1890ff' },
-          { title: 'Registered', value: counts.registered, color: '#1890ff' },
           { title: 'Under Investigation', value: counts.investigating, color: '#fa8c16' },
+          { title: 'Chargesheeted', value: counts.chargesheeted, color: '#722ed1' },
           { title: 'Closed', value: counts.closed, color: '#52c41a' },
         ].map((s, i) => (
-          <Col xs={12} sm={6} key={i}>
+          <Col xs={12} sm={12} md={6} style={{ flex: 1 }} key={i}>
             <Card className="fir-stat-card" bordered={false}>
               <Statistic
                 title={<span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12 }}>{s.title}</span>}
